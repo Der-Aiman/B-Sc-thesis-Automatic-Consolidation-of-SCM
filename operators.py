@@ -1,3 +1,7 @@
+"""
+This module provides operators for use in Structural Causal Models
+"""
+
 from abc import ABC, abstractmethod
 from copy import copy
 from math import comb
@@ -10,12 +14,18 @@ import sympy
 import random_variable as rv
 
 class ResultType(StrEnum):
+    """
+    This class provides constants describing the type an operator's output
+    """
     logical = "bool"
     unknown = "unknown"
     float = "float"
 
 
 class EqElement(ABC):
+    """
+    This class provides an interface for arbitrary elements of a structural equation
+    """
     result_type: ResultType
 
     @abstractmethod
@@ -41,16 +51,24 @@ class EqElement(ABC):
         return self
 
 class Operator(EqElement):
-
+    """
+    This class provides an interface for operators
+    """
     def get_operands(self):
         raise NotImplementedError()
 
 class FlatOperator(Operator):
+    """
+    This class provides an interface for operators that do not follow a tree structure
+    """
     @abstractmethod
     def to_operator_tree(self):
         raise NotImplementedError()
 
 class StructVar(EqElement):
+    """
+    This class represents variables of a Structural Causal Model
+    """
     def __init__(self, _id: str, struct_eq: EqElement|None):
         self.id = _id
         self.struct_eq = struct_eq
@@ -88,6 +106,9 @@ class StructVar(EqElement):
         return self.struct_eq if self.id in vars else self
 
 class Const(EqElement):
+    """
+    This class represents constant values
+    """
     def __init__(self, value):
         self.value = value
         if isinstance(value, (float, int, rv.ContinuousRV, rv.DiscreteRV)):
@@ -126,6 +147,9 @@ class Const(EqElement):
         return self
 
 class Sum(Operator):
+    """
+    This class represents sum operations
+    """
     def __init__(self, operands):
         self.operands = operands
         self.result_type = ResultType.float
@@ -233,6 +257,9 @@ class Sum(Operator):
         return ret
 
 class Product(Operator):
+    """
+    This class represents product operations
+    """
     def __init__(self, operands):
         self.operands = operands
         self.result_type = ResultType.float
@@ -339,6 +366,9 @@ class Product(Operator):
         return ret
 
 class LogicalNot(Operator):
+    """
+    This class represents logical not operations
+    """
     def __init__(self, operand: EqElement):
         self.operand = operand
         self.result_type = ResultType.logical
@@ -404,6 +434,9 @@ class LogicalNot(Operator):
         return solve(self) == solve(other)
 
 class LogicalAnd(Operator):
+    """
+    This class represents logical and operations
+    """
     def __init__(self, operands):
         self.operands = operands
         self.result_type = ResultType.logical
@@ -496,6 +529,9 @@ class LogicalAnd(Operator):
         return solve(self) == solve(other)
 
 class LogicalOr(Operator):
+    """
+    This class represents logical or operations
+    """
     def __init__(self, operands):
         self.operands = operands
         self.result_type = ResultType.logical
@@ -588,6 +624,9 @@ class LogicalOr(Operator):
         return solve(self) == solve(other)
 
 class Equals(Operator):
+    """
+    This class represents checks for equality
+    """
     def __init__(self, op1: EqElement, op2: EqElement):
         self.op1 = op1
         self.op2 = op2
@@ -634,6 +673,9 @@ class Equals(Operator):
         return isinstance(other, Equals) and ((self.op1 == other.op1) and (self.op2 == other.op2)) or ((self.op1 == other.op2) and (self.op2 == other.op1))
 
 class Min(Operator):
+    """
+    This class represents mminimum operations
+    """
     def __init__(self, operands):
         self.operands = operands
         self.result_type = ResultType.unknown
@@ -684,6 +726,9 @@ class Min(Operator):
         return f"Min{[str(op) for op in self.operands]}"
 
 class CondSwitch(Operator):
+    """
+    This class represents conditional branching
+    """
     def __init__(self, conditions, cases):
         self.conditions = conditions
         self.cases = cases
@@ -800,6 +845,9 @@ class CondSwitch(Operator):
         return CondSwitch(new_conditions, new_cases)
 
 class KDNFSolution(FlatOperator):
+    """
+    This class represents logical functions as a set of solutions
+    """
     def __init__(self, variables: dict[str, StructVar], positions: dict[str, int], solutions: list[str]):
         self.variables = variables
         self.solutions = solutions
@@ -1096,6 +1144,9 @@ def power_sol(length) -> list[str]:
     return ret
 
 def solve(logical_operator):
+    """
+    Converts the specified logical function into a KDNFSolution object
+    """
     if isinstance(logical_operator, Const):
         return logical_operator
     if isinstance(logical_operator, StructVar):
@@ -1133,6 +1184,11 @@ def solve(logical_operator):
     raise RuntimeError(f"Something went wrong while trying to solve {logical_operator}")
 
 class LinearFunction(FlatOperator):
+    """
+    This class represents linear functions.
+    This is the preferred method for defining linear function as simplification
+    using operator trees is only rudimentary
+    """
     def __init__(self, variables: dict[str, StructVar], params: list[float], positions: dict[str, int]):
         self.variables = variables
         self.params = params
@@ -1379,6 +1435,9 @@ class LinearFunction(FlatOperator):
         return str(self.to_operator_tree())
 
 def merge_solutions(solutions, solution2=None):
+    """
+    Merges KDNFSolution objects. This is a step of logic minimization
+    """
     if not ((isinstance(solutions, (list, tuple)) and (solution2 is None)) or (isinstance(solutions, (KDNFSolution, Const)) and isinstance(solution2, (KDNFSolution, Const)))):
         raise ValueError()
     if isinstance(solutions, (list, tuple)):
@@ -1420,6 +1479,9 @@ def merge_solutions(solutions, solution2=None):
         return KDNFSolution(new_variables, new_positions, new_solutions)
 
 def str_xor(str1, str2):
+    """
+    Returns the result of a bitwise xor operation on a pair of bit-strings
+    """
     if not (isinstance(str1, str) and isinstance(str2, str) and (len(str1) == len(str2))):
         raise ValueError("Inputs must be strings of equal length")
     ret = ""
@@ -1428,12 +1490,19 @@ def str_xor(str1, str2):
     return ret
 
 def match_assignment(assignment, solution):
+    """
+    Checks whether solution matches assignment when assignment
+    may include * (don't-care)
+    """
     for i, char in enumerate(assignment):
         if (solution[i] != "*") and (char != solution[i]):
             return False
     return True
 
 def min_rv(*args):
+    """
+    Returns the minimum of args when args may include random variables
+    """
     for a in args:
         if isinstance(a, rv.RandomVariable):
             return rv.rv_min(*args)

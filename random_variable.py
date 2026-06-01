@@ -1,3 +1,7 @@
+"""
+This module provides functionality for random variable arithmetic
+"""
+
 from abc import ABC
 from typing import Callable
 from copy import copy
@@ -6,11 +10,15 @@ import random
 import sympy
 import approx_utils
 
+# global variables
 approx_samples = 1000
 sum_nc_samples = 500
 approx_threshold = 0.001
 
 class GenericFunction:
+    """
+    This class represents a function, represented by a sympy expression
+    """
     def __init__(self, expr: sympy.Expr, variable: str):
         self.expr = expr
         self.variable = variable
@@ -50,7 +58,9 @@ class PiecewiseSplinePDF:
         return cdf
 
 class RandomVariable(ABC):
-
+    """
+    This class provides an interface for classes implementing random variables
+    """
     pdf: Callable
 
     def sample(self):
@@ -63,6 +73,10 @@ class RandomVariable(ABC):
         return self.pdf
 
 class ContinuousRV(RandomVariable):
+    """
+    This class represents generic continuous random variables.
+    It is advised to use other classes to define random variables
+    """
     def __init__(self, pdf: GenericFunction|None =None, cdf: GenericFunction|None =None):
         if (pdf is None) & (cdf is None):
             raise ValueError("pdf or cdf must be given.")
@@ -98,6 +112,10 @@ class ContinuousRV(RandomVariable):
         return self * other
 
 class ApproxContinuousRV(ContinuousRV):
+    """
+    This class represents continuous random variables whose pdf
+    is approximated by a cubic spline
+    """
     def __init__(self, pdf: approx_utils.Spline3|PiecewiseSplinePDF):
         self.pdf = pdf
 
@@ -176,6 +194,9 @@ class ApproxContinuousRV(ContinuousRV):
         return min_rv
 
 class ExponentialDistRV(ContinuousRV):
+    """
+    This class represents random variables with an exponential distribution
+    """
     def __init__(self, lamb: float):
         if lamb <= 0:
             raise ValueError("Lambda must be greater than 0")
@@ -248,6 +269,9 @@ class ExponentialDistRV(ContinuousRV):
         return ExponentialDistRV(new_lamb)
 
 class DiscreteRV(RandomVariable):
+    """
+    This class represent discrete random variables
+    """
     def __init__(self, pdf=None, domain=int):
         if isinstance(pdf, dict):
             is_int = True
@@ -281,6 +305,9 @@ class DiscreteRV(RandomVariable):
             return LogicalRV(self.pdf(other))
 
 class LogicalRV(DiscreteRV):
+    """
+    This class represents logical random variables
+    """
     def __init__(self, true_prob):
         self.true_prob = true_prob
 
@@ -328,6 +355,9 @@ class LogicalRV(DiscreteRV):
             return LogicalRV(1 - self.true_prob)
 
 def rv_min(*args):
+    """
+    Returns a random variable representing the minimumm of args
+    """
     remaining_args = []
     ex_dist_vars = []
     min_const = float("inf")

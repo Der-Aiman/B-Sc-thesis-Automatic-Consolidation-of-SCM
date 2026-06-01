@@ -1,3 +1,8 @@
+"""
+This module provides functionality for working with
+Structural Causal Models
+"""
+
 import sys
 import sympy
 import numpy as np
@@ -11,6 +16,9 @@ sys.path.append(".")
 import operators
 
 class CausalGraph:
+    """
+    This class represents a graph, containing the causal structure of an SCM
+    """
     def __init__(self, ex_vars: list[str], en_vars: list[str], edges: list[tuple[str, str]]):
         self.ex_vars = ex_vars
         self.en_vars = en_vars
@@ -185,6 +193,9 @@ def part_causal_graph_backward(graph, border_vars):
     return node_sets
 
 class AbstractSCM(ABC):
+    """
+    This class provides an interface for classes implementing Structural Causal Models
+    """
     @abstractmethod
     def evaluate_var(self, var, values):
         raise NotImplementedError()
@@ -240,6 +251,9 @@ class AbstractSCM(ABC):
         raise NotImplementedError()
 
 class AbstractCCV(ABC):
+    """
+    This class provides an interface for classes implementing Causal Compositional Variables
+    """
     @abstractmethod
     def get_inter_variables(self):
         raise NotImplementedError()
@@ -257,6 +271,9 @@ class AbstractCCV(ABC):
         raise NotImplementedError()
 
 class SCM(AbstractSCM):
+    """
+    This class represents Structural Causal Models
+    """
     def __init__(self, ex_vars: dict[str, operators.StructVar]|list[operators.StructVar], en_vars: dict[str, operators.StructVar]|list[operators.StructVar]):
         if isinstance(ex_vars, dict):
             self.ex_vars = ex_vars
@@ -421,6 +438,9 @@ class SCM(AbstractSCM):
         return self.partition(part_algo(self.get_causal_graph(), border_vars))
 
 class PartitionedSCM(AbstractSCM):
+    """
+    This class represent partitioned Structural Causal Models
+    """
     def __init__(self, sub_scm: list[AbstractSCM]):
         self.sub_scm = sub_scm
 
@@ -528,6 +548,11 @@ class PartitionedSCM(AbstractSCM):
         return PartitionedSCM(new_sub_scm)
 
 class GuardedIVarSCM(AbstractSCM):
+    """
+    This class represents Structural Causal Models with interventional variables.
+    An additional guard variables is used to represent the presence of interventions
+    for each interventional variable
+    """
     def __init__(self, ex_vars, en_vars, i_vars=None, g_vars = None, allowed_interventions=None):
         self.ex_vars = ex_vars
         if allowed_interventions is not None:
@@ -673,6 +698,9 @@ class GuardedIVarSCM(AbstractSCM):
         return self.partition(part_algo(self.get_causal_graph(), border_vars))
 
 class CCV(AbstractCCV):
+    """
+    This class represents Causal Compositional Variables
+    """
     def __init__(self, observations, intervened_vars, defining_vars, defining_blocked_map, defining_eq_map):
         self.observations = observations
         self.intervened_vars = intervened_vars
@@ -713,6 +741,10 @@ class CCV(AbstractCCV):
         return set(self.intervened_vars)
 
 def scm_from_matrices(ex_vars: list[str], en_vars: list[str], ex_matrix: np.ndarray, en_matrix: np.ndarray, const_terms: np.ndarray):
+    """
+    Returns an linear SCM as described by the specified matrices for dependencies from exogenous variables,
+    dependencies from endogenous variables and constant offsets
+    """
     ex_var_dict = {key:operators.StructVar(key, None) for key in ex_vars}
     en_var_dict = {}
     for idx, var in enumerate(en_vars):

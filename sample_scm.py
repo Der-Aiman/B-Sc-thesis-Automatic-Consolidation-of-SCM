@@ -1,3 +1,10 @@
+"""
+This module provides an example for definition of linear SCM.
+The model is loosely based on the article at
+https://volta.foundation/battery-manufacturing-basics-from-catls-cell-production-line-part-1/
+Values are not accurate. The example is meant solely for demonstration purposes.
+"""
+
 import numpy as np
 
 import operators

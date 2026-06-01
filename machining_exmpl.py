@@ -1,3 +1,7 @@
+"""
+This module provides an example for definition of an SCM
+"""
+
 import causal_models
 import operators
 import random_variable
@@ -24,10 +28,10 @@ scm = causal_models.SCM(ex_vars, en_vars)
 
 dist = scm.evaluate_rv("layer_2_var_0", random_values)
 
-vals = []
+#vals = []
 
-lb = 0
-ub = 200
+#lb = 0
+#ub = 200
 
 #for i in range(1001):
 #    x = lb + i * ((ub - lb)/1000)
